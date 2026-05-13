@@ -156,7 +156,7 @@ input:focus,select:focus{outline:none;border-color:#185FA5;}
 <div class="container">
 <a class="back" href="index.html">← 인덱스로 돌아가기</a>
 <h1>🧮 세금 비교 시뮬레이터</h1>
-<p class="sub">2025년 귀속 종합소득세 · 간편(기준)/간편(단순)/기장 3가지 비교 <span style="color:#185FA5;font-weight:600;">v26</span> <span style="font-size:11px;color:#888;">(연금계좌·전자신고·세액감면 추가)</span></p>
+<p class="sub">2025년 귀속 종합소득세 · 간편(기준)/간편(단순)/기장 3가지 비교 <span style="color:#185FA5;font-weight:600;">v27</span> <span style="font-size:11px;color:#888;">(신고서양식 동일 - 연금계좌 4종·특별세액공제·기부금·감면)</span></p>
 
 <!-- 이름 입력 -->
 <!-- ========== 입력 영역 (PDF 1번에서만 표시) ========== -->
@@ -397,47 +397,145 @@ input:focus,select:focus{outline:none;border-color:#185FA5;}
   <div id="pension-preview" style="display:none;margin-top:10px;padding:8px 12px;background:#EAF3DE;border-radius:8px;font-size:12px;color:#27500A;line-height:1.6;"></div>
 </div>
 
-<!-- ★ 세액공제 · 세액감면 입력 카드 (v26 신규) -->
+<!-- ★ 세액공제 · 세액감면 입력 카드 (v27 — 신고서 양식 동일) -->
 <div class="card">
-  <div class="card-title">💰 세액공제 · 세액감면 <span style="font-size:11px;font-weight:400;color:#888;">— 표준세액공제(7만원) · 자녀세액공제는 자동 적용</span></div>
+  <div class="card-title">💰 세액공제 · 세액감면 <span style="font-size:11px;font-weight:400;color:#888;">— 종합소득세 신고서 양식(연금계좌·특별세액공제·기부금·감면) 일치</span></div>
 
-  <!-- 연금계좌 세액공제 (소법 §59의3) -->
+  <!-- ━━ ① 연금계좌세액공제 (소법 §59의3) ━━ -->
   <div style="margin-bottom:14px;">
-    <div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;">📦 연금계좌 세액공제 <span style="font-weight:400;color:#888;font-size:11px;">— 소득세법 §59의3</span></div>
+    <div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;">
+      📦 연금계좌세액공제
+      <span style="font-weight:400;color:#888;font-size:11px;">— 소득세법 §59의3 / 신고서 274·275·276·27A</span>
+    </div>
     <div class="f3" style="grid-template-columns:1fr 1fr;">
       <div>
-        <label>연금저축 납입액 (원) · 한도 600만원</label>
-        <input type="number" id="pension-acc" placeholder="0" min="0" value="0">
+        <label>274 과학기술인공제 납입액 (원)</label>
+        <input type="number" id="ra-274" placeholder="0" min="0" value="0">
       </div>
       <div>
-        <label>퇴직연금(IRP) 납입액 (원) · 합산 한도 900만원</label>
-        <input type="number" id="irp-acc" placeholder="0" min="0" value="0">
+        <label>275 퇴직연금(DC·IRP 본인부담) 납입액 (원)</label>
+        <input type="number" id="ra-275" placeholder="0" min="0" value="0">
+      </div>
+      <div>
+        <label>276 연금저축 납입액 (원)</label>
+        <input type="number" id="ra-276" placeholder="0" min="0" value="0">
+      </div>
+      <div>
+        <label>27A ISA 만기 시 연금계좌 추가납입액 (원)</label>
+        <input type="number" id="ra-27A" placeholder="0" min="0" value="0">
       </div>
     </div>
     <div style="font-size:11px;color:#888;margin-top:8px;line-height:1.6;padding:8px 12px;background:#F0F7FF;border-radius:6px;">
-      ※ <strong>한도</strong>: 연금저축 600만원 + IRP 합산 <strong>900만원</strong>까지 (총급여 5,500만원·종합소득 4,500만원 이하면 ISA 만기전환액 별도 300만 추가 가능 — 본 시뮬레이터 미반영)<br>
-      ※ <strong>공제율</strong>: 종합소득금액 <strong>4,500만원 이하 15%</strong> / 초과 <strong>12%</strong> (근로소득만 있을 시 5,500만 기준)
+      ※ <strong>합산 한도</strong>: 연금저축 600만 + 퇴직연금·과학기술인공제 합산 <strong>900만</strong> / ISA 전환분 별도 <strong>300만</strong> 추가 (소법 §59의3②)<br>
+      ※ <strong>공제율</strong>: 종합소득금액 <strong>4,500만 이하 15%</strong> / 초과 <strong>12%</strong> (총급여 5,500만 기준 병행)<br>
+      ※ 신고서상 12(15)% 표기는 종합소득금액에 따라 자동 산정
+    </div>
+    <div id="ra-summary" style="font-size:11px;color:#185FA5;margin-top:6px;padding:6px 10px;background:#E6F1FB;border-radius:6px;display:none;"></div>
+  </div>
+
+  <!-- ━━ ② 특별세액공제 (소법 §59의4) — 근로소득자만 적용 ━━ -->
+  <div style="padding-top:14px;border-top:1px solid #f0eeea;margin-bottom:14px;">
+    <div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;">
+      🏥 특별세액공제
+      <span style="font-weight:400;color:#888;font-size:11px;">— 소득세법 §59의4 / 신고서 277·278·279·291</span>
+      <span style="font-weight:400;color:#A32D2D;font-size:11px;margin-left:6px;">※ 근로소득자만 적용 (사업소득자는 표준세액공제 7만원으로 자동대체)</span>
+    </div>
+    <div class="f3">
+      <div>
+        <label>277 보장성보험료 (일반, 한도 100만) · 12%</label>
+        <input type="number" id="sc-277" placeholder="0" min="0" value="0">
+      </div>
+      <div>
+        <label>291 보장성보험료 (장애인, 별도 한도 100만) · 15%</label>
+        <input type="number" id="sc-291" placeholder="0" min="0" value="0">
+      </div>
+      <div>
+        <label>278 의료비 (총급여 3% 초과분) · 15%</label>
+        <input type="number" id="sc-278" placeholder="0" min="0" value="0">
+      </div>
+      <div>
+        <label>278-2 난임시술비 (포함) · 30%</label>
+        <input type="number" id="sc-278b" placeholder="0" min="0" value="0">
+      </div>
+      <div>
+        <label>278-3 미숙아·선천성이상아 의료비 · 20%</label>
+        <input type="number" id="sc-278c" placeholder="0" min="0" value="0">
+      </div>
+      <div>
+        <label>279 교육비 · 15%</label>
+        <input type="number" id="sc-279" placeholder="0" min="0" value="0">
+      </div>
+    </div>
+    <div style="font-size:11px;color:#888;margin-top:8px;line-height:1.6;padding:8px 12px;background:#FFF8E7;border-radius:6px;">
+      ※ <strong>의료비 공제 산식</strong>: (지출액 − 총급여×3%) 중 본인·65세이상·장애인·6세이하 의료비는 한도 없음, 그 외 부양가족 의료비는 한도 700만<br>
+      ※ <strong>교육비 한도</strong>: 본인(전액)·미취학아동(1인 300만)·초중고(1인 300만)·대학생(1인 900만)<br>
+      ※ <strong>중요</strong>: 근로소득금액이 없는 경우 입력해도 자동 0 처리 (사업소득자에게는 적용 불가 — §59의4①)
     </div>
   </div>
 
-  <!-- 전자신고 세액공제 (조특법 §104의8) -->
-  <div style="margin-bottom:14px;padding-top:14px;border-top:1px solid #f0eeea;">
-    <div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;">💻 전자신고 세액공제 <span style="font-weight:400;color:#888;font-size:11px;">— 조세특례제한법 §104의8</span></div>
-    <div class="f3" style="grid-template-columns:1fr;">
+  <!-- ━━ ③ 기부금세액공제 (소법 §59의4④) — 사업소득자도 적용 가능 ━━ -->
+  <div style="padding-top:14px;border-top:1px solid #f0eeea;margin-bottom:14px;">
+    <div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;">
+      🎁 기부금세액공제
+      <span style="font-weight:400;color:#888;font-size:11px;">— 소득세법 §59의4④ / 신고서 282·283</span>
+      <span style="font-weight:400;color:#3B6D11;font-size:11px;margin-left:6px;">※ 사업소득자도 적용 가능 (필요경비 산입 또는 세액공제 택일)</span>
+    </div>
+    <div class="f3">
       <div>
-        <label>전자신고 세액공제 적용 여부</label>
+        <label>282 특례기부금(법정) 지출액 (원) · 15·30·40%</label>
+        <input type="number" id="dn-282" placeholder="0" min="0" value="0">
+      </div>
+      <div>
+        <label>283 일반기부금(지정) 지출액 (원) · 15·30%</label>
+        <input type="number" id="dn-283" placeholder="0" min="0" value="0">
+      </div>
+      <div>
+        <label>우리사주조합 기부금 (원) · 15%</label>
+        <input type="number" id="dn-employee" placeholder="0" min="0" value="0">
+      </div>
+    </div>
+    <div style="font-size:11px;color:#888;margin-top:8px;line-height:1.6;padding:8px 12px;background:#F3F7EE;border-radius:6px;">
+      ※ <strong>공제율</strong>: 1천만 이하 15% / 1천만 초과 30% / 3천만 초과(특례기부금만) 40% — 2026.12.31까지 한시 (조특법 §57·§58)<br>
+      ※ <strong>한도</strong>: 특례기부금 = 종합소득금액 100% / 일반기부금 = 종합소득금액 30%(종교 10%) / 우리사주 = 30%<br>
+      ※ <strong>한도 초과액은 10년간 이월공제</strong> (소법 §59의4④후단) — 이월분은 위 「특별소득공제 - 기부금(이월분)」에 입력
+    </div>
+  </div>
+
+  <!-- ━━ ④ 표준세액공제 (자동·7만원) + 전자신고세액공제 ━━ -->
+  <div style="padding-top:14px;border-top:1px solid #f0eeea;margin-bottom:14px;">
+    <div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;">
+      💻 기타 세액공제
+    </div>
+    <div class="f3" style="grid-template-columns:1fr 1fr;">
+      <div>
+        <label>284 표준세액공제 (사업소득자 7만원 자동) · 소법 §59의4⑨</label>
+        <select id="std-credit-mode">
+          <option value="auto" selected>자동 적용 (사업소득자 7만원)</option>
+          <option value="manual">수동 입력</option>
+          <option value="off">미적용 (특별공제 사용 시)</option>
+        </select>
+        <input type="number" id="std-credit-amt" placeholder="수동 입력 시" min="0" value="70000" style="display:none;margin-top:6px;">
+      </div>
+      <div>
+        <label>전자신고세액공제 · 조특법 §104의8 (2만원)</label>
         <select id="efile-credit">
           <option value="20000" selected>적용 (2만원)</option>
           <option value="0">미적용</option>
         </select>
       </div>
     </div>
-    <div style="font-size:11px;color:#888;margin-top:6px;">※ 납세자가 직접 홈택스 전자신고 시 적용. 세무대리인을 통한 신고 시 미적용.</div>
+    <div style="font-size:11px;color:#888;margin-top:6px;line-height:1.6;">
+      ※ <strong>표준세액공제 vs 특별세액공제 택일</strong>: 보장성보험·의료비·교육비·기부금세액공제 합계가 7만원 미만이면 표준세액공제가 유리 — 시뮬레이터는 자동으로 큰 금액 적용<br>
+      ※ <strong>전자신고세액공제</strong>는 납세자 본인이 직접 홈택스로 신고할 때만 적용. 세무대리인을 통한 신고 시 미적용.
+    </div>
   </div>
 
-  <!-- 세액감면 (조특법 §6·§7) -->
+  <!-- ━━ ⑤ 세액감면 (조특법 §6·§7) ━━ -->
   <div style="padding-top:14px;border-top:1px solid #f0eeea;">
-    <div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;">🏭 세액감면 <span style="font-weight:400;color:#888;font-size:11px;">— 조세특례제한법 §6(창업) · §7(중소기업특별)</span></div>
+    <div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;">
+      🏭 세액감면
+      <span style="font-weight:400;color:#888;font-size:11px;">— 조세특례제한법 §6(창업) · §7(중소기업특별)</span>
+    </div>
     <div class="f3">
       <div>
         <label>세액감면 유형</label>
@@ -459,10 +557,9 @@ input:focus,select:focus{outline:none;border-color:#185FA5;}
     </div>
     <div id="exempt-hint" style="font-size:11px;color:#888;margin-top:8px;line-height:1.6;padding:8px 12px;background:#FFF8E7;border-radius:6px;display:none;"></div>
     <div style="font-size:11px;color:#888;margin-top:8px;line-height:1.6;">
-      ※ <strong>중소기업특별세액감면(§7)</strong>: 업종·지역(수도권/지방)·규모(소기업/중기업)에 따라 5~30%. 한도 연 1억원 (조특법 §132 최저한세 적용).<br>
-      ※ <strong>창업중소기업등 세액감면(§6)</strong>: 청년창업·생애최초창업 등은 5년간 50~100% (수도권과밀억제권역 외 청년창업 100%). 한도 없음.<br>
-      ※ <strong>감면세액 = 산출세액 × (사업소득금액 / 종합소득금액) × 감면율</strong> — 종합소득 중 사업소득 비율만 감면 대상 (소법 §59의5).<br>
-      ※ 정확한 적용 요건은 <a href="https://www.law.go.kr" target="_blank" style="color:#185FA5;">국가법령정보센터</a> 조특법 §6·§7 확인 필수.
+      ※ <strong>중소기업특별세액감면(§7)</strong>: 업종·지역·규모별 5~30%. 한도 연 1억원 (최저한세 적용)<br>
+      ※ <strong>창업중소기업등 세액감면(§6)</strong>: 창업 후 5년간 50~100% (수도권과밀억제권역 외 청년창업 100%)<br>
+      ※ <strong>감면세액</strong> = 산출세액 × (사업소득금액/종합소득금액) × 감면율 (소법 §59의5)
     </div>
   </div>
 </div>
@@ -490,7 +587,7 @@ input:focus,select:focus{outline:none;border-color:#185FA5;}
     <!-- (PDF 1 소제목은 입력 영역 상단에 위치) -->
 
     <div class="card">
-      <div class="card-title">📊 신고 방법별 세금 비교 <span style="font-size:11px;font-weight:400;color:#185FA5;">v26 · 세액공제·감면 반영</span></div>
+      <div class="card-title">📊 신고 방법별 세금 비교 <span style="font-size:11px;font-weight:400;color:#185FA5;">v27 · 신고서양식 동일 세액공제</span></div>
       <div class="compare-grid" id="cds"></div>
     </div>
 
@@ -1575,22 +1672,103 @@ function calcAll(bizIncome, opts){
   }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // ★ 연금계좌 세액공제 (소법 §59의3)
-  //    한도: 연금저축 600만 + IRP 합산 900만
+  // ★ 연금계좌 세액공제 (소법 §59의3) — 신고서 274/275/276/27A 분리
+  //    한도: 연금저축 600만 + 퇴직연금·과학기술인공제 합산 900만 / ISA전환 별도 300만
   //    공제율: 종합소득금액 4,500만 이하 15%, 초과 12%
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  const pensionAcc = N(document.getElementById('pension-acc')?.value);
-  const irpAcc = N(document.getElementById('irp-acc')?.value);
-  const pensionAccApplied = Math.min(pensionAcc, 6000000);
-  const pensionAccTotal = Math.min(pensionAccApplied + irpAcc, 9000000);
+  const ra274 = N(document.getElementById('ra-274')?.value);  // 과학기술인공제
+  const ra275 = N(document.getElementById('ra-275')?.value);  // 퇴직연금(IRP)
+  const ra276 = N(document.getElementById('ra-276')?.value);  // 연금저축
+  const ra27A = N(document.getElementById('ra-27A')?.value);  // ISA만기 연금전환
+  // 1단계: 연금저축 600만 한도
+  const ra276Applied = Math.min(ra276, 6000000);
+  // 2단계: 연금저축 + 과학기술인 + 퇴직연금 = 합산 900만 한도
+  const raCombined = Math.min(ra276Applied + ra274 + ra275, 9000000);
+  // 3단계: ISA 전환분 별도 300만 한도
+  const ra27AApplied = Math.min(ra27A, 3000000);
+  const raTotal = raCombined + ra27AApplied;
   const pensionAccRate = totalInc <= 45000000 ? 0.15 : 0.12;
-  const pensionAccCredit = Math.floor(pensionAccTotal * pensionAccRate);
+  const pensionAccCredit = Math.floor(raTotal * pensionAccRate);
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ★ 특별세액공제 (소법 §59의4) — 근로소득자만 적용
+  //    보장성보험(일반 12%, 장애인 15%) / 의료비(15·20·30%) / 교육비(15%)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  let sc277Credit = 0, sc291Credit = 0, sc278Credit = 0, sc278bCredit = 0, sc278cCredit = 0, sc279Credit = 0;
+  let scTotal = 0;
+  if(otherType === '근로소득' && workIncome > 0){
+    const sc277 = N(document.getElementById('sc-277')?.value);  // 일반 보장성보험
+    const sc291 = N(document.getElementById('sc-291')?.value);  // 장애인 보장성보험
+    const sc278 = N(document.getElementById('sc-278')?.value);  // 일반 의료비
+    const sc278b = N(document.getElementById('sc-278b')?.value); // 난임시술비
+    const sc278c = N(document.getElementById('sc-278c')?.value); // 미숙아·선천성이상아
+    const sc279 = N(document.getElementById('sc-279')?.value);  // 교육비
+    // 보장성보험: 각 100만 한도 × 율
+    sc277Credit = Math.floor(Math.min(sc277, 1000000) * 0.12);
+    sc291Credit = Math.floor(Math.min(sc291, 1000000) * 0.15);
+    // 의료비: 사용자 입력 금액 그대로 (3% 초과분 산정은 사용자 책임)
+    // 한도 검증은 사용자 안내 책임
+    sc278Credit = Math.floor(sc278 * 0.15);
+    sc278bCredit = Math.floor(sc278b * 0.30);
+    sc278cCredit = Math.floor(sc278c * 0.20);
+    sc279Credit = Math.floor(sc279 * 0.15);
+    scTotal = sc277Credit + sc291Credit + sc278Credit + sc278bCredit + sc278cCredit + sc279Credit;
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ★ 기부금세액공제 (소법 §59의4④) — 사업소득자도 적용 가능
+  //    1천만 이하 15%, 1천만 초과 30%, 특례 3천만 초과분 40% (~2026.12.31)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const dn282 = N(document.getElementById('dn-282')?.value);    // 특례기부금
+  const dn283 = N(document.getElementById('dn-283')?.value);    // 일반기부금
+  const dnEmp = N(document.getElementById('dn-employee')?.value); // 우리사주
+  // 특례기부금: 종합소득금액 100% 한도 / 일반기부금: 30% 한도 (종교 10%) — 종교구분 없이 30% 적용
+  const dn282Applied = Math.min(dn282, totalInc);
+  const dn283Applied = Math.min(dn283, totalInc * 0.3);
+  const dnEmpApplied = Math.min(dnEmp, totalInc * 0.3);
+  // 공제율 계산 (특례기부금만 3천만 초과 40% 적용 / 합산 1천만 기준 15·30% 분기)
+  function donateCredit(amount, hasSpecial40){
+    if(amount <= 0) return 0;
+    if(hasSpecial40 && amount > 30000000){
+      // 1천만 이하 15% + (1천만~3천만) 30% + (3천만 초과) 40%
+      return Math.floor(10000000*0.15 + 20000000*0.30 + (amount-30000000)*0.40);
+    }
+    if(amount <= 10000000) return Math.floor(amount * 0.15);
+    return Math.floor(10000000 * 0.15 + (amount - 10000000) * 0.30);
+  }
+  const dn282Credit = donateCredit(dn282Applied, true);
+  const dn283Credit = donateCredit(dn283Applied, false);
+  const dnEmpCredit = donateCredit(dnEmpApplied, false);
+  const dnTotal = dn282Credit + dn283Credit + dnEmpCredit;
 
   // ★ 전자신고 세액공제 (조특법 §104의8) — 2만원
   const efileCredit = N(document.getElementById('efile-credit')?.value);
 
-  const baseCr = 70000;        // 표준세액공제
-  const totalCr = baseCr + childTaxCredit + pensionAccCredit + efileCredit;
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ★ 표준세액공제 vs 특별세액공제 자동 택일 (소법 §59의4⑨)
+  //    근로소득자: 특별세액공제 합계가 7만원 이상이면 특별 적용, 아니면 표준 7만 + 기부금
+  //    사업소득자: 표준 7만원 + 기부금세액공제
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const stdMode = document.getElementById('std-credit-mode')?.value || 'auto';
+  const stdManualAmt = N(document.getElementById('std-credit-amt')?.value);
+  let baseCr = 0;
+  let useSpecial = false;
+  if(stdMode === 'off'){
+    baseCr = 0;
+    useSpecial = (otherType === '근로소득' && workIncome > 0);
+  }else if(stdMode === 'manual'){
+    baseCr = stdManualAmt;
+  }else{
+    // auto: 근로소득자는 특별세액공제(보험·의료·교육) vs 표준7만 비교
+    if(otherType === '근로소득' && workIncome > 0 && scTotal >= 70000){
+      baseCr = 0; useSpecial = true;
+    }else{
+      baseCr = 70000;
+    }
+  }
+  const appliedSpecialCredit = useSpecial ? scTotal : 0;
+
+  const totalCr = baseCr + childTaxCredit + pensionAccCredit + efileCredit + appliedSpecialCredit + dnTotal;
   // ★ 결정세액 = max(0, 산출세액 - 세액감면 - 세액공제)
   const detBeforePenalty = Math.max(0, Math.round(rawTax - exemptAmt - totalCr));
 
@@ -1650,9 +1828,16 @@ function calcAll(bizIncome, opts){
     disCnt, eldCnt, childCnt, persCount,  // ★ 인원수도 echo용으로 반환
     specialDeduct, spIns, spRent, spMort, spDon,  // ★ 특별소득공제 분해
     baseCr, childTaxCredit,
-    // ★ v26 신규: 연금계좌·전자신고 세액공제 / 세액감면
-    pensionAcc, irpAcc, pensionAccApplied, pensionAccTotal, pensionAccRate, pensionAccCredit,
+    // ★ v26 신규: 세액감면 / 전자신고세액공제
     efileCredit, exemptType, exemptRate, exemptCap, exemptAmt,
+    // ★ v27 신규: 연금계좌 4종 분리 (274/275/276/27A)
+    ra274, ra275, ra276, ra27A, ra276Applied, raCombined, ra27AApplied, raTotal,
+    pensionAccRate, pensionAccCredit,
+    // ★ v27 신규: 특별세액공제 (보장성보험/의료/교육) — 근로소득자만
+    sc277Credit, sc291Credit, sc278Credit, sc278bCredit, sc278cCredit, sc279Credit,
+    scTotal, useSpecial, appliedSpecialCredit,
+    // ★ v27 신규: 기부금세액공제 (282/283/우리사주)
+    dn282, dn283, dnEmp, dn282Credit, dn283Credit, dnEmpCredit, dnTotal,
     // ★ 공적연금소득 (소법 §20조의3, §47의2)
     pensionGross, pensionDeduct, pensionIncome
   };
@@ -1839,9 +2024,11 @@ function calc(){
       <div class="cr"><span class="cm">세율</span><span>${d.r.rate}%</span></div>
       <div class="cr"><span class="cm">산출세액</span><span>${F(d.r.rawTax)}원</span></div>
       <div class="cr"><span class="cm">세액감면${d.r.exemptType && d.r.exemptType!=='none' ? ` <span style="font-size:10px;color:#888;">(${d.r.exemptType==='sme'?'중기특별':d.r.exemptType==='startup'?'창업':'기타'} ${Math.round((d.r.exemptRate||0)*100)}%)</span>` : ''}</span><span class="crd">△${F(d.r.exemptAmt||0)}원</span></div>
-      <div class="cr"><span class="cm">세액공제 (표준 7만원)</span><span class="crd">△${F(d.r.baseCr||70000)}원</span></div>
+      <div class="cr"><span class="cm">세액공제 ${d.r.useSpecial ? '(특별세액공제 적용)' : `(표준 ${F(d.r.baseCr||0)}원)`}</span><span class="crd">△${F(d.r.baseCr + (d.r.appliedSpecialCredit||0))}원</span></div>
       ${childCrRow}
-      ${d.r.pensionAccCredit>0 ? `<div class="cr" style="background:#F0F7FF;margin:0 -4px;padding:4px 4px;"><span class="cm" style="color:#0C447C;font-size:11px;">└ 연금계좌세액공제 (${Math.round(d.r.pensionAccRate*100)}%)</span><span class="crd">△${F(d.r.pensionAccCredit)}원</span></div>` : ''}
+      ${d.r.pensionAccCredit>0 ? `<div class="cr" style="background:#F0F7FF;margin:0 -4px;padding:4px 4px;"><span class="cm" style="color:#0C447C;font-size:11px;">└ 연금계좌세액공제 (${Math.round(d.r.pensionAccRate*100)}%, 적용 ${F(d.r.raTotal)}원)</span><span class="crd">△${F(d.r.pensionAccCredit)}원</span></div>` : ''}
+      ${d.r.useSpecial && d.r.scTotal>0 ? `<div class="cr" style="background:#FFF8E7;margin:0 -4px;padding:4px 4px;"><span class="cm" style="color:#633806;font-size:11px;">└ 특별세액공제 (보장성·의료·교육)</span><span class="crd">△${F(d.r.scTotal)}원</span></div>` : ''}
+      ${d.r.dnTotal>0 ? `<div class="cr" style="background:#F3F7EE;margin:0 -4px;padding:4px 4px;"><span class="cm" style="color:#27500A;font-size:11px;">└ 기부금세액공제</span><span class="crd">△${F(d.r.dnTotal)}원</span></div>` : ''}
       ${d.r.efileCredit>0 ? `<div class="cr" style="background:#F4F3EF;margin:0 -4px;padding:4px 4px;"><span class="cm" style="color:#444;font-size:11px;">└ 전자신고 세액공제</span><span class="crd">△${F(d.r.efileCredit)}원</span></div>` : ''}
       ${penRow}
       <div class="cr" style="border-top:1px solid #e8e6df;padding-top:5px;margin-top:3px;">
@@ -2173,6 +2360,17 @@ function onExemptTypeChange(){
     hintEl.style.display = 'none';
   }
 }
+
+// ★ v27 신규: 표준세액공제 모드 변경 시 수동입력란 토글
+document.addEventListener('DOMContentLoaded', function(){
+  const stdMode = document.getElementById('std-credit-mode');
+  const stdAmt = document.getElementById('std-credit-amt');
+  if(stdMode && stdAmt){
+    stdMode.addEventListener('change', function(){
+      stdAmt.style.display = (this.value === 'manual') ? 'block' : 'none';
+    });
+  }
+});
 
 // ===== 디버그: 추출 텍스트 확인 =====
 function showRawText(){
