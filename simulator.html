@@ -156,7 +156,7 @@ input:focus,select:focus{outline:none;border-color:#185FA5;}
 <div class="container">
 <a class="back" href="index.html">← 인덱스로 돌아가기</a>
 <h1>🧮 세금 비교 시뮬레이터</h1>
-<p class="sub">2025년 귀속 종합소득세 · 간편(기준)/간편(단순)/기장 3가지 비교 <span style="color:#185FA5;font-weight:600;">v27</span> <span style="font-size:11px;color:#888;">(신고서양식 동일 - 연금계좌 4종·특별세액공제·기부금·감면)</span></p>
+<p class="sub">2025년 귀속 종합소득세 · 간편(기준)/간편(단순)/기장 3가지 비교 <span style="color:#185FA5;font-weight:600;">v28.1</span> <span style="font-size:11px;color:#888;">(근로소득세액공제 한도 산식 정정 — 소법 §59② 위하고 일치)</span></p>
 
 <!-- 이름 입력 -->
 <!-- ========== 입력 영역 (PDF 1번에서만 표시) ========== -->
@@ -401,6 +401,14 @@ input:focus,select:focus{outline:none;border-color:#185FA5;}
 <div class="card">
   <div class="card-title">💰 세액공제 · 세액감면 <span style="font-size:11px;font-weight:400;color:#888;">— 종합소득세 신고서 양식(연금계좌·특별세액공제·기부금·감면) 일치</span></div>
 
+  <!-- ━━ ⓞ 자동 적용 안내 ━━ -->
+  <div style="font-size:11px;color:#27500A;background:#EAF3DE;border-radius:6px;padding:8px 12px;margin-bottom:14px;line-height:1.7;">
+    <strong>📌 자동 적용되는 세액공제 (별도 입력 불필요)</strong><br>
+    • <strong>203 근로소득세액공제</strong> (소법 §59): 근로소득 있을 시 자동 산정 — 산출세액 55%/30% × 한도(74만·66만·50만)<br>
+    • <strong>273 자녀세액공제</strong> (소법 §59의2): 위 인적공제 영역의 자녀 수에 따라 자동<br>
+    • <strong>284 표준세액공제</strong> (소법 §59의4⑨): 사업소득자 7만원 자동, 근로소득자는 특별공제 합계와 비교 후 큰 금액 적용
+  </div>
+
   <!-- ━━ ① 연금계좌세액공제 (소법 §59의3) ━━ -->
   <div style="margin-bottom:14px;">
     <div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;">
@@ -587,7 +595,7 @@ input:focus,select:focus{outline:none;border-color:#185FA5;}
     <!-- (PDF 1 소제목은 입력 영역 상단에 위치) -->
 
     <div class="card">
-      <div class="card-title">📊 신고 방법별 세금 비교 <span style="font-size:11px;font-weight:400;color:#185FA5;">v27 · 신고서양식 동일 세액공제</span></div>
+      <div class="card-title">📊 신고 방법별 세금 비교 <span style="font-size:11px;font-weight:400;color:#185FA5;">v28 · 근로소득세액공제 자동</span></div>
       <div class="compare-grid" id="cds"></div>
     </div>
 
@@ -1745,6 +1753,45 @@ function calcAll(bizIncome, opts){
   const efileCredit = N(document.getElementById('efile-credit')?.value);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ★ 근로소득세액공제 (소법 §59) — 근로소득 있을 시 자동 적용
+  //    산식: 근로소득 산출세액의 55%(130만 이하) 또는 71.5만+초과분×30% (130만 초과)
+  //    한도: 총급여별 슬라이딩 (74만/66~74만/50~66만/50만)
+  //    종합과세 시: 산출세액 × (근로소득금액/종합소득금액)으로 근로소득분 산출세액 안분 (소법 §59②)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  let workTaxCredit = 0;
+  let workSalaryTotal = 0;
+  if(otherType === '근로소득' && workIncome > 0 && totalInc > 0){
+    // 근로소득분 산출세액 = 산출세액 × (근로소득금액 / 종합소득금액)
+    const workShareTax = rawTax * (workIncome / totalInc);
+    // 근로소득세액공제 산식
+    let raw;
+    if(workShareTax <= 1300000){
+      raw = workShareTax * 0.55;
+    }else{
+      raw = 715000 + (workShareTax - 1300000) * 0.30;
+    }
+    // 총급여 기준 한도 (소법 §59②)
+    const wt = (typeof getWorkTotals === 'function') ? getWorkTotals() : {salary:0};
+    workSalaryTotal = wt.salary;
+    let cap;
+    if(workSalaryTotal <= 33000000){
+      // 1호: 3,300만 이하 → 74만
+      cap = 740000;
+    }else if(workSalaryTotal <= 70000000){
+      // 2호: 3,300만~7,000만 → 74만 − (총급여 − 3,300만) × 8/1,000, 최저 66만
+      cap = Math.max(660000, 740000 - (workSalaryTotal - 33000000) * 8 / 1000);
+    }else if(workSalaryTotal <= 120000000){
+      // 3호: 7,000만~1.2억 → 66만 − (총급여 − 7,000만) × 1/2 × 1/1,000, 최저 50만
+      // 산식: 66만 − (총급여−7,000만) × 0.0005
+      cap = Math.max(500000, 660000 - (workSalaryTotal - 70000000) * 0.0005);
+    }else{
+      // 4호: 1.2억 초과 → 50만 − (총급여 − 1.2억) × 1/2, 최저 20만
+      cap = Math.max(200000, 500000 - (workSalaryTotal - 120000000) * 0.5);
+    }
+    workTaxCredit = Math.floor(Math.min(raw, cap));
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // ★ 표준세액공제 vs 특별세액공제 자동 택일 (소법 §59의4⑨)
   //    근로소득자: 특별세액공제 합계가 7만원 이상이면 특별 적용, 아니면 표준 7만 + 기부금
   //    사업소득자: 표준 7만원 + 기부금세액공제
@@ -1768,7 +1815,7 @@ function calcAll(bizIncome, opts){
   }
   const appliedSpecialCredit = useSpecial ? scTotal : 0;
 
-  const totalCr = baseCr + childTaxCredit + pensionAccCredit + efileCredit + appliedSpecialCredit + dnTotal;
+  const totalCr = baseCr + childTaxCredit + pensionAccCredit + efileCredit + appliedSpecialCredit + dnTotal + workTaxCredit;
   // ★ 결정세액 = max(0, 산출세액 - 세액감면 - 세액공제)
   const detBeforePenalty = Math.max(0, Math.round(rawTax - exemptAmt - totalCr));
 
@@ -1838,6 +1885,8 @@ function calcAll(bizIncome, opts){
     scTotal, useSpecial, appliedSpecialCredit,
     // ★ v27 신규: 기부금세액공제 (282/283/우리사주)
     dn282, dn283, dnEmp, dn282Credit, dn283Credit, dnEmpCredit, dnTotal,
+    // ★ v28 신규: 근로소득세액공제 (소법 §59)
+    workTaxCredit, workSalaryTotal,
     // ★ 공적연금소득 (소법 §20조의3, §47의2)
     pensionGross, pensionDeduct, pensionIncome
   };
@@ -2028,6 +2077,7 @@ function calc(){
       ${childCrRow}
       ${d.r.pensionAccCredit>0 ? `<div class="cr" style="background:#F0F7FF;margin:0 -4px;padding:4px 4px;"><span class="cm" style="color:#0C447C;font-size:11px;">└ 연금계좌세액공제 (${Math.round(d.r.pensionAccRate*100)}%, 적용 ${F(d.r.raTotal)}원)</span><span class="crd">△${F(d.r.pensionAccCredit)}원</span></div>` : ''}
       ${d.r.useSpecial && d.r.scTotal>0 ? `<div class="cr" style="background:#FFF8E7;margin:0 -4px;padding:4px 4px;"><span class="cm" style="color:#633806;font-size:11px;">└ 특별세액공제 (보장성·의료·교육)</span><span class="crd">△${F(d.r.scTotal)}원</span></div>` : ''}
+      ${d.r.workTaxCredit>0 ? `<div class="cr" style="background:#E6F1FB;margin:0 -4px;padding:4px 4px;"><span class="cm" style="color:#0C447C;font-size:11px;">└ 근로소득세액공제 (소법 §59)</span><span class="crd">△${F(d.r.workTaxCredit)}원</span></div>` : ''}
       ${d.r.dnTotal>0 ? `<div class="cr" style="background:#F3F7EE;margin:0 -4px;padding:4px 4px;"><span class="cm" style="color:#27500A;font-size:11px;">└ 기부금세액공제</span><span class="crd">△${F(d.r.dnTotal)}원</span></div>` : ''}
       ${d.r.efileCredit>0 ? `<div class="cr" style="background:#F4F3EF;margin:0 -4px;padding:4px 4px;"><span class="cm" style="color:#444;font-size:11px;">└ 전자신고 세액공제</span><span class="crd">△${F(d.r.efileCredit)}원</span></div>` : ''}
       ${penRow}
